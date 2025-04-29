@@ -1,6 +1,3 @@
-# Diabetes-Prediction-System-using-Random-Forest-and-Streamlit
-This project is a machine learning-based web app that predicts the likelihood of diabetes in individuals based on key health indicators. It uses a Random Forest Classifier trained on the Pima Indians Diabetes dataset and is deployed using an interactive Streamlit interface.
-
 # Diabetes Prediction System using Random Forest and Streamlit
 
 This project is an end-to-end machine learning application designed to predict the likelihood of diabetes in individuals based on key health indicators. It is built using a Random Forest Classifier and deployed through an interactive Streamlit web interface, enabling real-time predictions from user inputs.
