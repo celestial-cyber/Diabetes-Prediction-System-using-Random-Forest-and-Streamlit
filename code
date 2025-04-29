@@ -1,0 +1,73 @@
+import numpy as np
+import pandas as pd #regression as continuous data 
+import matplotlib.pyplot as plt
+import seaborn as sns
+from feature_engine.outliers import Winsorizer
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+import streamlit as st
+from sklearn.metrics import accuracy_score, confusion_matrix#use classification as we have discrete data 
+
+ddf=pd.read_csv("C:\\ML Projects\\diabetes.csv")
+
+win = Winsorizer(capping_method='iqr', tail='both', fold=1.5, variables=['Age', 'SkinThickness', 'Pregnancies','BloodPressure','Insulin','DiabetesPedigreeFunction','BMI'])
+# Fit and transform all columns at once
+ddf[['Age', 'SkinThickness', 'Pregnancies','BloodPressure','Insulin','DiabetesPedigreeFunction','BMI']] = win.fit_transform(ddf[['Age', 'SkinThickness', 'Pregnancies','BloodPressure','Insulin','DiabetesPedigreeFunction','BMI']])
+
+x=ddf.drop(['Outcome'],axis=1)
+y=ddf['Outcome']
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=50)
+
+# Initialize and Train RandomForest Model
+rf = RandomForestClassifier(
+    n_estimators=100,        
+    max_depth=10,            
+    min_samples_split=10,    
+    min_samples_leaf=4,      
+    max_features="sqrt",     
+    random_state=50
+)
+rf.fit(x_train, y_train)
+
+# Compute accuracy
+train_acc = accuracy_score(y_train, rf.predict(x_train))
+test_acc = accuracy_score(y_test, rf.predict(x_test))
+
+# Streamlit App
+st.title("Diabetes Disease Prediction")
+st.sidebar.header("Enter Patient Details")
+
+# Sidebar Inputs
+age = st.sidebar.number_input("Age", min_value=21, max_value=81, value=30)
+pregnancies = st.sidebar.number_input("Number of Pregnancies", min_value=0, max_value=20, value=1)
+bmi = st.sidebar.number_input("BMI (Body Mass Index)", min_value=10.0, max_value=50.0, value=25.0, step=0.1)
+blood_pressure = st.sidebar.number_input("Blood Pressure", min_value=50, max_value=200, value=120)
+glucose = st.sidebar.number_input("Glucose Level", min_value=50, max_value=300, value=100)
+insulin = st.sidebar.number_input("Insulin Level", min_value=0.0, max_value=500.0, value=50.0, step=0.1)
+dpf = st.sidebar.number_input("Diabetes Pedigree Function (Genetic Factor)", min_value=0.0, max_value=2.5, value=0.5, step=0.01)
+skin_thickness = st.sidebar.number_input("Skin Thickness", min_value=0.0, max_value=100.0, value=20.0, step=0.1)  # Added this parametercd
+
+if st.sidebar.button("Predict"):
+    # Prepare input
+    sample_input = np.array([[pregnancies, glucose, blood_pressure, skin_thickness, insulin, bmi, dpf, age]], dtype=np.float64)
+    
+    # Get prediction probability
+    prob = rf.predict_proba(sample_input)[0][1]  # Probability of being diabetic
+
+    # Display result
+    if prob > 0.5:  # 50% threshold
+        st.sidebar.success(f"The model predicts: *Diabetic* (Confidence: {prob:.2f})")
+    else:
+        st.sidebar.success(f"The model predicts: *Not Diabetic* (Confidence: {prob:.2f})")
+
+
+# Display Metrics
+st.subheader("Model Performance")
+st.write(f"*Training Accuracy:* {train_acc:.2f}")
+st.write(f"*Test Accuracy:* {test_acc:.2f}")
+
+
+st.subheader("Classification Report")
+st.text(confusion_matrix(y_test, rf.predict(x_test)))
+
